@@ -5,7 +5,7 @@ import sys
  
 pcapFileName = 'test2.pcap'
 
-def rfc1918(ip):
+def isIPRFC1918(ip):
   try:
     octets = map(int, ip.split('.'))
   except:
@@ -23,58 +23,108 @@ def rfc1918(ip):
   else:
     return False
 
-def openPcap(filename):
-  f = open(fileName, 'rb')
-  pcap = dpkt.pcap.Reader(f)
+def openPCAP(filename):
+  f = open(filename, 'rb')
+  return dpkt.pcap.Reader(f)
 
-def closePcap(handle):
+def closePCAP(handle):
   handle.close()
 
-def parseIPs():
-  pass
-def parseDomains():
-  pass
+def ethFrametoIPs(eth):
+  IPs = []
+  try:
+    ip = eth.data
+    try:
+      IPs.append(socket.inet_ntoa(ip.src))
+    except: pass
+    try:
+      IPs.append(socket.inet_ntoa(ip.dst))
+    except: pass
+  except: pass
+  return IPs
 
-  
-uniqueHosts = set([])
-uniqueIPs = set([])
-count =0
-for ts, buf in pcap:
-  eth = dpkt.ethernet.Ethernet(buf)
-  try:
-    ip = eth.data
-    src = socket.inet_ntoa(ip.src)
-    dst = socket.inet_ntoa(ip.dst)
-    uniqueIPs.add(src)
-    uniqueIPs.add(dst)
-    count += 2
-    #print "src:",src,"-- dst:",dst
-  except:
-    pass
+def ethFrametoDNS(eth):
+  pass  
+
+# def ethFrametoDNS(eth):
+#   pass  
  
+# uniqueIPs = set([])
+# uniqueIP(eth):
+#   for ip in ethFrametoIPs(eth):
+#     uniqueIPs.add(ip)
  
-  try:
-    ip = eth.data
-    udp = ip.data
-    dns = dpkt.dns.DNS(udp.data)
-    name = dns.qd[0].name
-    print dns.qd
-    if '.' in name:
-      uniqueHosts.add(name)
-    
-  except:
-    pass
+# uniqueHosts = set([])
+# uniqueHost(eth):
+#  # BLAH
  
-print "Count",len(uniqueIPs),"out of", count
+# def iteratePCAP(pcap,callbacks=[]):
+
+def iteratePCAP(pcap):
+  uniqueHosts = set([])
+  uniqueIPs = set([])
+
+  for ts, buff in pcap:
+    try:
+      eth = dpkt.ethernet.Ethernet(buff)
+      
+      try:
+        for ip in ethFrametoIPs(eth):
+          uniqueIPs.add(ip)
+        except: pass
+
+    except: pass
+
+    #DNS carving
+    try:
+      print 6
+      ip = eth.data
+      if eth.type != 2048: continue
+      if ip.p != 17: continue
+      udp = ip.data
+      if udp.sport != 53 and udp.dport != 53: continue
+      dns = dpkt.dns.DNS(udp.data)
+      if dns.qr != dpkt.dns.DNS_R: continue
+      if dns.opcode != dpkt.dns.DNS_QUERY: continue
+      if dns.rcode != dpkt.dns.DNS_RCODE_NOERR: continue
+      if len(dns.an) < 1: continue
+
+      for answer in dns.an:
+        print 7
+        uniqueHosts.add(answer.name)
+        if answer.type == 5:
+          #cname = dns & response = dns
+          uniqueHosts.add(answer.cname)
+          #print "CNAME request", answer.name, "\tresponse", answer.cname
+        elif answer.type == 1:
+          pass
+          #uniqueIPs.add(socket.inet_ntoa(answer.rdata))
+          #a = dns & response = ip
+          #print "A request", answer.name, "\tresponse", socket.inet_ntoa(answer.rdata)
+        elif answer.type == 12:
+          # i don't know
+          uniqueHosts.add(answer.ptrname)
+          #print "PTR request", answer.name, "\tresponse", answer.ptrname 
+    except: continue
+    return [uniqueIPs, uniqueHosts]
+
+
  
-y = 0
-nonRFCips = set([])
-for x in uniqueIPs:
-  if rfc1918(x):
-    pass
-  else:
-    nonRFCips.add(x)
-    y +=1
+
+pcap = openPCAP(pcapFileName)
+print iteratePCAP(pcap)
+
+
+# print "Count",len(uniqueIPs),"out of", count
+ 
+# y = 0
+# nonRFCips = set([])
+# for x in uniqueIPs:
+#   if rfc1918(x):
+#     pass
+#   else:
+#     nonRFCips.add(x)
+#     y +=1
 # print 'Non RFC1918 IPs:', y
  
 # print 'uniqueHosts:', len(uniqueHosts)
@@ -85,62 +135,62 @@ for x in uniqueIPs:
  
  
  
-f.close()
+# f.close()
  
 
  
 
-f = open(pcapFileName, 'rb')
-pcap = dpkt.pcap.Reader(f)
+# f = open(pcapFileName, 'rb')
+# pcap = dpkt.pcap.Reader(f)
  
-for ts, buf in pcap:
- try: 
-  eth = dpkt.ethernet.Ethernet(buf)
- except: 
-  continue
+# for ts, buf in pcap:
+#  try: 
+#   eth = dpkt.ethernet.Ethernet(buf)
+#  except: 
+#   continue
 
- if eth.type != 2048: 
-  continue
+#  if eth.type != 2048: 
+#   continue
 
- try: 
-  ip = eth.data
- except: 
-  continue
- if ip.p != 17: 
-  continue
+#  try: 
+#   ip = eth.data
+#  except: 
+#   continue
+#  if ip.p != 17: 
+#   continue
 
- try: 
-  udp = ip.data
- except: 
-  continue
+#  try: 
+#   udp = ip.data
+#  except: 
+#   continue
 
- if udp.sport != 53 and udp.dport != 53: 
-  continue
+#  if udp.sport != 53 and udp.dport != 53: 
+#   continue
 
- try: 
-  dns = dpkt.dns.DNS(udp.data)
- except: 
-  continue
+#  try: 
+#   dns = dpkt.dns.DNS(udp.data)
+#  except: 
+#   continue
 
- if dns.qr != dpkt.dns.DNS_R: 
-  continue
- if dns.opcode != dpkt.dns.DNS_QUERY: 
-  continue
- if dns.rcode != dpkt.dns.DNS_RCODE_NOERR: 
-  continue
- if len(dns.an) < 1: 
-  continue
+#  if dns.qr != dpkt.dns.DNS_R: 
+#   continue
+#  if dns.opcode != dpkt.dns.DNS_QUERY: 
+#   continue
+#  if dns.rcode != dpkt.dns.DNS_RCODE_NOERR: 
+#   continue
+#  if len(dns.an) < 1: 
+#   continue
 
- for answer in dns.an:
-   if answer.type == 5:
-     #cname = dns & response = dns
-     print "CNAME request", answer.name, "\tresponse", answer.cname
-   elif answer.type == 1:
-     #a = dns & response = ip
-     print "A request", answer.name, "\tresponse", socket.inet_ntoa(answer.rdata)
-   elif answer.type == 12:
-     # i don't know
-     print "PTR request", answer.name, "\tresponse", answer.ptrname 
+#  for answer in dns.an:
+#    if answer.type == 5:
+#      #cname = dns & response = dns
+#      print "CNAME request", answer.name, "\tresponse", answer.cname
+#    elif answer.type == 1:
+#      #a = dns & response = ip
+#      print "A request", answer.name, "\tresponse", socket.inet_ntoa(answer.rdata)
+#    elif answer.type == 12:
+#      # i don't know
+#      print "PTR request", answer.name, "\tresponse", answer.ptrname 
  
  
  
