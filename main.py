@@ -4,6 +4,7 @@ import binascii
 import sys
  
 pcapFileName = 'test2.pcap'
+
 def rfc1918(ip):
   try:
     octets = map(int, ip.split('.'))
@@ -22,10 +23,19 @@ def rfc1918(ip):
   else:
     return False
 
- 
-f = open(pcapFileName, 'rb')
- 
-pcap = dpkt.pcap.Reader(f)
+def openPcap(filename):
+  f = open(fileName, 'rb')
+  pcap = dpkt.pcap.Reader(f)
+
+def closePcap(handle):
+  handle.close()
+
+def parseIPs():
+  pass
+def parseDomains():
+  pass
+
+  
 uniqueHosts = set([])
 uniqueIPs = set([])
 count =0
@@ -75,14 +85,9 @@ for x in uniqueIPs:
  
  
  
- 
 f.close()
  
- 
- 
 
- 
-import 
  
 
 f = open(pcapFileName, 'rb')
