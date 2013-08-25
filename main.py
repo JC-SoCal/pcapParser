@@ -2,10 +2,11 @@ import dpkt
 import socket
 import binascii
 import sys
+
  
 pcapFileName = 'test2.pcap'
 
-def filterRFC1918(ip):
+def f_RFC1918(ip):
   try:
     octets = map(int, ip.split('.'))
   except:
@@ -18,8 +19,15 @@ def filterRFC1918(ip):
   elif octets[0] == 192 and octets[1] == 168: return True
   else: return False
 
-def filterIP(data):
+def f_IPv4(ip):
+  try:
+    socket.inet_aton(ip)
+  except socket.error:
+    return False
+  return True
 
+def f_Domains(name):
+  pass
 
 def openPCAP(filename):
   f = open(filename, 'rb')
@@ -86,83 +94,3 @@ pcap = openPCAP(pcapFileName)
 x = iteratePCAP(pcap,[ethFrameToIPs,ethFrameToDomains])
 print len(x)
 
-
-# print "Count",len(uniqueIPs),"out of", count
- 
-# y = 0
-# nonRFCips = set([])
-# for x in uniqueIPs:
-#   if rfc1918(x):
-#     pass
-#   else:
-#     nonRFCips.add(x)
-#     y +=1
-# print 'Non RFC1918 IPs:', y
- 
-# print 'uniqueHosts:', len(uniqueHosts)
-# for x in nonRFCips:
-#   print x
-#   if x == '65.121.209.16':
-#     print 'found it'
- 
- 
- 
-# f.close()
- 
-
- 
-
-# f = open(pcapFileName, 'rb')
-# pcap = dpkt.pcap.Reader(f)
- 
-# for ts, buf in pcap:
-#  try: 
-#   eth = dpkt.ethernet.Ethernet(buf)
-#  except: 
-#   continue
-
-#  if eth.type != 2048: 
-#   continue
-
-#  try: 
-#   ip = eth.data
-#  except: 
-#   continue
-#  if ip.p != 17: 
-#   continue
-
-#  try: 
-#   udp = ip.data
-#  except: 
-#   continue
-
-#  if udp.sport != 53 and udp.dport != 53: 
-#   continue
-
-#  try: 
-#   dns = dpkt.dns.DNS(udp.data)
-#  except: 
-#   continue
-
-#  if dns.qr != dpkt.dns.DNS_R: 
-#   continue
-#  if dns.opcode != dpkt.dns.DNS_QUERY: 
-#   continue
-#  if dns.rcode != dpkt.dns.DNS_RCODE_NOERR: 
-#   continue
-#  if len(dns.an) < 1: 
-#   continue
-
-#  for answer in dns.an:
-#    if answer.type == 5:
-#      #cname = dns & response = dns
-#      print "CNAME request", answer.name, "\tresponse", answer.cname
-#    elif answer.type == 1:
-#      #a = dns & response = ip
-#      print "A request", answer.name, "\tresponse", socket.inet_ntoa(answer.rdata)
-#    elif answer.type == 12:
-#      # i don't know
-#      print "PTR request", answer.name, "\tresponse", answer.ptrname 
- 
- 
- 
