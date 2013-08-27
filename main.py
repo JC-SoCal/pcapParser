@@ -2,7 +2,7 @@ import dpkt
 import socket
 import binascii
 import sys
-
+import re
  
 pcapFileName = 'test2.pcap'
 
@@ -25,6 +25,7 @@ def f_NotRFC1918(ip):
     return False
 
 def f_IPv4(ip):
+  #import socket
   try:
     socket.inet_aton(ip)
     return True
@@ -32,17 +33,43 @@ def f_IPv4(ip):
     return False
 
 def f_Domains(name):
-  import tldextract
+  #import re
+  regex = "^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}$"
+  if re.match(regex, name):
+    return True
+  else:
+    return False
+
+def f_ValidatedDomains(name):
+  #import socket
+  try:
+    if f_Domains(name):
+      if socket.getaddrinfo(name, None):
+        result = socket.getaddrinfo(name, None)
+        #print result[0][4]
+        return True
+  except:
+      return False
+
+def readFile(filename):
+  try:
+    f = open(filename, 'rb')
+    return f
+  except:
+    return False
   
+def openPCAP(fileHandle):
+  #import dpkt
+  return dpkt.pcap.Reader(fileHandle)
 
-def openPCAP(filename):
-  f = open(filename, 'rb')
-  return dpkt.pcap.Reader(f)
-
-def closePCAP(handle):
-  handle.close()
+def closeFile(handle):
+  try:
+    return handle.close()
+  except:
+    return False
 
 def ethFrameToIPs(eth):  
+  #import socket
   IPs = []  
   try:
     ip = eth.data
@@ -56,6 +83,7 @@ def ethFrameToIPs(eth):
   return IPs
 
 def ethFrameToDomains(eth):
+  #import dpkt
   data = []
   try:
     ip = eth.data
@@ -78,6 +106,7 @@ def ethFrameToDomains(eth):
   return data
  
 def iteratePCAP(pcap,callbacks=[]):
+  #import dpkt
   data = set([])
   for ts, buff in pcap:
     try:
@@ -102,13 +131,13 @@ def parseData(data,filters=[]):
 
 
 
+h = readFile(pcapFileName)
+pcap = openPCAP(h)
 
-pcap = openPCAP(pcapFileName)
 x = iteratePCAP(pcap,[ethFrameToIPs,ethFrameToDomains])
-print len(x)
 
-myIP = parseData(x,filters=[f_NotRFC1918])
-print myIP
-print len(myIP)
-print len(parseData(x,filters=[f_IPv4]))
-
+print "No-RFC1918:", len(parseData(x,filters=[f_NotRFC1918]))
+print "All IPv4:", len(parseData(x,filters=[f_IPv4]))
+print "All Domains:", len(parseData(x,filters=[f_Domains]))
+print "Validiated Domains:", len(parseData(x,filters=[f_ValidatedDomains]))
+closeFile(h)
