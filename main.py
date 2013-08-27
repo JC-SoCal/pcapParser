@@ -28,33 +28,33 @@ def openPCAP(fileHandle):
   #import dpkt
   return dpkt.pcap.Reader(fileHandle)
  
-def iteratePCAP(pcap,callbacks=[]):
+def carveData(pcap,carvers=[]):
   #import dpkt
   data = set([])
   for ts, buff in pcap:
     try:
       eth = dpkt.ethernet.Ethernet(buff)
       
-      for callback in callbacks:
-        for item in callback(eth):
+      for carver in carvers:
+        for item in carver(eth):
           data.add(item)
     except: 
       pass
 
   return data
 
-def parseData(data,filters=[]):
-  parsedData = set([])
+def filterData(data,filters=[]):
+  filteredData = set([])
   for item in data:
     for f in filters:
       if f(item):
-        parsedData.add(item)
-  return parsedData
+        filteredData.add(item)
+  return filteredData
 
 ###############
-## CALLBACKS ##
+## CARVERS ##
 ###############
-def ethFrameToIPs(eth):  
+def c_IPv4(eth):  
   #import socket
   IPs = []  
   try:
@@ -68,7 +68,7 @@ def ethFrameToIPs(eth):
   except: pass
   return IPs
 
-def ethFrameToDomains(eth):
+def c_Domain(eth):
   #import dpkt
   data = []
   try:
@@ -145,15 +145,15 @@ pcapFileName = 'demo.pcap'
 h = readFile(pcapFileName)
 pcap = openPCAP(h)
 
-x = iteratePCAP(pcap,[ethFrameToIPs,ethFrameToDomains])
+data = carveData(pcap,[c_IPv4,c_Domain])
 
-print "All IPv4:", len(parseData(x,filters=[f_IPv4]))
-print "No-RFC1918:", len(parseData(x,filters=[f_NotRFC1918]))
-print "All Domains:", len(parseData(x,filters=[f_Domains]))
-print "Validiated Domains:", len(parseData(x,filters=[f_ValidatedDomains]))
+print "All IPv4:", len(filterData(data,filters=[f_IPv4]))
+print "No-RFC1918:", len(filterData(data,filters=[f_NotRFC1918]))
+print "All Domains:", len(filterData(data,filters=[f_Domains]))
+print "Validiated Domains:", len(filterData(data,filters=[f_ValidatedDomains]))
 
-print "All IPv4:\n", (parseData(x,filters=[f_IPv4]))
-print "No-RFC1918:\n", (parseData(x,filters=[f_NotRFC1918]))
-print "All Domains:\n", (parseData(x,filters=[f_Domains]))
-print "Validiated Domains:\n", (parseData(x,filters=[f_ValidatedDomains]))
+print "All IPv4:\n", (filterData(data,filters=[f_IPv4]))
+print "No-RFC1918:\n", (filterData(data,filters=[f_NotRFC1918]))
+print "All Domains:\n", (filterData(data,filters=[f_Domains]))
+print "Validiated Domains:\n", (filterData(data,filters=[f_ValidatedDomains]))
 closeFile(h)
