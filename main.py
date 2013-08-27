@@ -6,28 +6,34 @@ import sys
  
 pcapFileName = 'test2.pcap'
 
-def f_RFC1918(ip):
-  try:
-    octets = map(int, ip.split('.'))
-  except:
+def f_NotRFC1918(ip):
+  if f_IPv4(ip):
+    try:
+      octets = map(int, ip.split('.'))
+    except:
+      return False
+
+    if octets[0] == 10: 
+      return False
+    elif octets[0] == 172 and octets[1] in range(16,32): 
+      return False
+    elif octets[0] == 192 and octets[1] == 168: 
+      return False
+    else: 
+      return True
+  else:
     return False
-
-  if len([x for x in octets if 0<=x<=255]) != 4: return False
-
-  if octets[0] == 10: return True
-  elif octets[0] == 172 and octets[1] in range(16,32): return True
-  elif octets[0] == 192 and octets[1] == 168: return True
-  else: return False
 
 def f_IPv4(ip):
   try:
     socket.inet_aton(ip)
+    return True
   except socket.error:
     return False
-  return True
 
 def f_Domains(name):
-  pass
+  import tldextract
+  
 
 def openPCAP(filename):
   f = open(filename, 'rb')
@@ -85,6 +91,13 @@ def iteratePCAP(pcap,callbacks=[]):
 
   return data
 
+def parseData(data,filters=[]):
+  parsedData = set([])
+  for item in data:
+    for f in filters:
+      if f(item):
+        parsedData.add(item)
+  return parsedData
 
 
 
@@ -93,4 +106,9 @@ def iteratePCAP(pcap,callbacks=[]):
 pcap = openPCAP(pcapFileName)
 x = iteratePCAP(pcap,[ethFrameToIPs,ethFrameToDomains])
 print len(x)
+
+myIP = parseData(x,filters=[f_NotRFC1918])
+print myIP
+print len(myIP)
+print len(parseData(x,filters=[f_IPv4]))
 
