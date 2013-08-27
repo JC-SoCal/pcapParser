@@ -120,7 +120,7 @@ def f_IPv4(ip):
   except socket.error:
     return False
 
-def f_Domains(name):
+def f_Domain(name):
   #import re
   regex = "^[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}$"
   if re.match(regex, name):
@@ -128,7 +128,7 @@ def f_Domains(name):
   else:
     return False
 
-def f_ValidatedDomains(name):
+def f_ValidatedDomain(name):
   #import socket
   try:
     if f_Domains(name):
@@ -152,11 +152,11 @@ data = carveData(pcap,[c_IPv4,c_Domain])
 
 print "All IPv4:", len(filterData(data,filters=[f_IPv4]))
 print "No-RFC1918:", len(filterData(data,filters=[f_NotRFC1918]))
-print "All Domains:", len(filterData(data,filters=[f_Domains]))
-print "Validiated Domains:", len(filterData(data,filters=[f_ValidatedDomains]))
+print "All Domains:", len(filterData(data,filters=[f_Domain]))
+print "Validiated Domains:", len(filterData(data,filters=[f_ValidatedDomain]))
 
 print "All IPv4:\n", (filterData(data,filters=[f_IPv4]))
 print "No-RFC1918:\n", (filterData(data,filters=[f_NotRFC1918]))
-print "All Domains:\n", (filterData(data,filters=[f_Domains]))
-print "Validiated Domains:\n", (filterData(data,filters=[f_ValidatedDomains]))
+print "All Domains:\n", (filterData(data,filters=[f_Domain]))
+print "Validiated Domains:\n", (filterData(data,filters=[f_ValidatedDomain]))
 closeFile(h)
