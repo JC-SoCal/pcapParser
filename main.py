@@ -141,6 +141,9 @@ def f_ValidatedDomains(name):
 
 
 
+##########
+## DEMO ##
+##########
 pcapFileName = 'demo.pcap'
 h = readFile(pcapFileName)
 pcap = openPCAP(h)
